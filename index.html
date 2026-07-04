@@ -1273,7 +1273,7 @@ const totalSkins = d.ownedSkins ? d.ownedSkins.length : 0;
         function listenRoom() { 
             db.ref('rooms/' + roomCode).on('value', snap => { 
                 const d = snap.val(); if(!d) return; 
-                if(d.status === 'quit') { alert("Opponent Left"); resetGameSession(); return; } 
+                if(d.status === 'quit') { alert("Apakah anda yakin ingin membatalkannya?"); resetGameSession(); return; } 
                 if(d.status === 'play' || d.status === 'done') { 
                     nav('scr-game'); document.getElementById('social-tools').style.display = 'block'; 
                     const bg1 = shopBgs.find(b => b.id === d.p1Bg) || shopBgs[0]; const bg2 = shopBgs.find(b => b.id === d.p2Bg) || shopBgs[0];

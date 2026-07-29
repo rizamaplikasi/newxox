@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="XOX Prime Titanium Edition - Game Tic Tac Toe Multiplayer dan Solo interaktif berbasis web.">
+    <meta name="author" content="Rizam Aplikasi">
+    <title>XOX Prime - Pro Edition</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ===========================================
+           MODERN PRO UI - ULTRA SMOOTH EDITION
+           =========================================== */
+           
+        :root {
+            --bg-base: #0f1115;
+            --bg-surface: rgba(22, 24, 29, 0.65);
+            --bg-elevated: rgba(30, 33, 40, 0.75);
+            
+            --primary: #3b82f6; 
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --gold: #fbbf24;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-strong: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            
+            --radius-sm: 12px;
+            --radius-md: 18px;
+            --radius-lg: 28px;
+            --radius-xl: 40px;
+            
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        * { 
+            box-sizing: border-box; margin: 0; padding: 0;
+            transition: background var(--transition-smooth), border var(--transition-smooth), transform var(--transition-smooth), box-shadow var(--transition-smooth), color var(--transition-smooth); 
+            -webkit-user-select: none; user-select: none; touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent !important;
+            outline: none !important; font-family: 'Poppins', sans-serif;
+        }
+        
+        body { 
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            height: 100vh; display: flex; align-items: center; justify-content: center; 
+            color: var(--text-main); overflow: hidden; 
+        }
+
+        .app-container { 
+            width: 100%; max-width: 400px; height: 95vh; max-height: 850px; 
+            background: var(--bg-surface); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: 35px 25px; 
+            display: flex; flex-direction: column; position: relative; 
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1); 
+            overflow: hidden;
+        }
+
+        /* --- SCREEN TRANSITIONS --- */
+        .screen { 
+            display: none; flex-direction: column; align-items: center; 
+            width: 100%; height: 100%; 
+            overflow-y: auto; padding-bottom: 20px; scrollbar-width: none; z-index: 2;
+        }
+        .screen::-webkit-scrollbar { display: none; }
+        
+        /* Animasi Masuk */
+        .screen.active { 
+            display: flex; 
+            animation: screenEntry 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes screenEntry { 
+            0% { opacity: 0; transform: translateY(20px) scale(0.96); filter: blur(3px); } 
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 
+        }
+        /* Animasi Keluar (Dipanggil via JS) */
+        @keyframes screenExit {
+            0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: translateY(-20px) scale(0.96); filter: blur(3px); }
+        }
+
+        /* Tipografi */
+        h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; text-align: center; margin-bottom: 5px; }
+        h2 { font-size: 0.85rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin: 20px 0 25px 0; text-align: center; width: 100%; }
+
+        /* Tombol */
+        .btn { 
+            width: 100%; padding: 16px; margin: 6px 0; border-radius: var(--radius-md); font-size: 0.95rem; font-weight: 600; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; 
+            background: rgba(255,255,255,0.04); color: var(--text-main); border: 1px solid var(--glass-border); 
+            backdrop-filter: blur(10px);
+        }
+        .btn:hover { background: rgba(255,255,255,0.08); border-color: var(--glass-border-strong); transform: translateY(-3px); }
+        .btn:active { transform: scale(0.95); transition: 0.1s; }
+        
+        .btn-primary { background: var(--primary); color: white; border: none; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25); }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        .btn-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .btn-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .btn-small { padding: 10px 16px; font-size: 0.8rem; border-radius: var(--radius-sm); width: auto; margin: 0; }
+        
+        /* Input & Form */
+        input, textarea, select { 
+            width: 100%; padding: 18px; margin-bottom: 15px; background: rgba(0, 0, 0, 0.2); color: var(--text-main); font-size: 0.95rem;
+            border: 1px solid var(--glass-border); border-radius: var(--radius-md); transition: all 0.3s ease;
+        }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 0.6; }
+        input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); background: rgba(0, 0, 0, 0.4); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        textarea { resize: vertical; min-height: 120px; }
+        select option { background: var(--bg-base); color: var(--text-main); }
+        
+        /* Badges */
+        .v-badge, .v-badge-inline { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: var(--primary); color: white; border-radius: 50%; font-size: 10px; margin-left: 6px; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.4); }
+        .v-legend, .v-legend-inline { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: var(--gold); color: #000; border-radius: 50%; font-size: 10px; margin-left: 6px; font-weight: bold; box-shadow: 0 2px 8px rgba(251, 191, 36, 0.5); }
+
+        /* User Card */
+        .user-card { width: 100%; display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 18px; background: var(--bg-elevated); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); backdrop-filter: blur(10px); }
+        .coin-display { display: flex; align-items: center; gap: 6px; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); padding: 4px 12px; border-radius: 30px; font-weight: 600; color: var(--gold); font-size: 0.8rem; margin-top: 6px; width: max-content; }
+        .ava-frame { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid var(--glass-border-strong) !important; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3) !important; transition: var(--transition-bounce); }
+        .vvip-fathur { color: var(--gold) !important; text-shadow: 0 2px 10px rgba(251, 191, 36, 0.2); }
+        .ava-legendary { border: 1px solid var(--gold) !important; color: var(--gold) !important; font-weight: bold; font-size: 1rem !important; box-shadow: 0 0 15px rgba(251,191,36,0.3) !important; }
+        .user-card-fathur { background: linear-gradient(135deg, rgba(20,20,20,0.8), rgba(40,30,10,0.8)) !important; border: 1px solid rgba(251, 191, 36, 0.3) !important; }
+
+        /* Game Grid */
+        .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 30px 0; }
+        .tile { aspect-ratio: 1/1; background: rgba(0, 0, 0, 0.2); border-radius: var(--radius-md) !important; border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 500; cursor: pointer; box-shadow: inset 0 2px 6px rgba(0,0,0,0.4); transition: var(--transition-bounce); }
+        .tile:hover { background: rgba(255,255,255,0.06); transform: translateY(-3px); border-color: var(--glass-border-strong); box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.2); }
+        .tile:active { transform: scale(0.92); transition: 0.1s; }
+
+        .lb-row, .history-item { background: rgba(255,255,255,0.03); padding: 14px 18px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 14px; border: 1px solid var(--glass-border); margin-bottom: 10px; cursor: pointer; }
+        .lb-row:hover { background: rgba(255,255,255,0.06); transform: translateX(5px); }
+        .rank-1 { background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.3); }
+
+        /* --- OVERLAYS & MODALS (Smooth Fade Implementation) --- */
+        .v-notif { 
+            position: fixed; top: -80px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 500; font-size: 0.85rem; z-index: 9999; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4); 
+            opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .v-notif.show { top: 30px; opacity: 1; }
+
+        .full-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 11, 15, 0.85); backdrop-filter: blur(15px); border-radius: var(--radius-xl); z-index: 5000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 25px; 
+            
+            /* Hidden by default with smooth opacity transition */
+            visibility: hidden; opacity: 0; pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+        }
+        .full-overlay.show { visibility: visible; opacity: 1; pointer-events: auto; }
+        
+        /* Modal Box Animation */
+        .inspect-box, .event-box { 
+            background: var(--bg-elevated); border: 1px solid var(--glass-border-strong); padding: 30px 25px; border-radius: var(--radius-lg); width: 100%; max-width: 340px; box-shadow: var(--glass-shadow); 
+            transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .full-overlay.show .inspect-box, .full-overlay.show .event-box { transform: scale(1); }
+
+        /* Tabs */
+        .shop-tabs, .friend-sub-tabs { display: flex; width: 100%; background: rgba(0,0,0,0.2); padding: 4px; border-radius: var(--radius-md); margin-bottom: 20px; }
+        .shop-tab, .friend-sub-tab { flex: 1; padding: 10px; border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; text-align: center; font-weight: 500; font-size: 0.85rem; transition: 0.3s; border: none; background: transparent; }
+        .shop-tab.active, .friend-sub-tab.active { background: var(--bg-surface); color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        
+        .shop-list { width: 100%; display: flex; flex-direction: column; gap: 10px; height: 350px; overflow-y: auto; }
+        .shop-item { padding: 16px; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; }
+        .shop-item-title { font-weight: 600; font-size: 0.95rem; color: var(--text-main); }
+        .shop-item-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .shop-item-price { font-weight: 600; color: var(--gold); font-size: 0.85rem; margin-top: 6px; }
+        
+        .btn-shop-action { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; min-width: 85px; }
+        .btn-buy { background: rgba(251, 191, 36, 0.1); color: var(--gold); border: 1px solid rgba(251, 191, 36, 0.3); }
+        .btn-equip { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .btn-active-skin { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .status-online { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        .status-offline { background: var(--text-muted); }
+        
+        /* Sidebar Layout */
+        .lobby-layout-wrapper { display: flex; width: 100%; height: 100%; position: relative; overflow: hidden; }
+        .main-lobby-content { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; transition: transform var(--transition-bounce); }
+        .sidebar-friends-panel { position: absolute; right: -180px; top: 85px; width: 170px; height: calc(100% - 150px); background: var(--bg-elevated); border: 1px solid var(--glass-border); border-radius: var(--radius-lg) 0 0 var(--radius-lg); z-index: 100; display: flex; flex-direction: column; padding: 15px; backdrop-filter: blur(20px); transition: right var(--transition-bounce), box-shadow var(--transition-bounce); }
+        .sidebar-friends-panel.open { right: -25px; box-shadow: -15px 0 35px rgba(0,0,0,0.6); }
+        .sidebar-toggle-tab { position: absolute; left: -32px; top: 50%; transform: translateY(-50%); width: 32px; height: 70px; background: var(--bg-elevated); border: 1px solid var(--glass-border); border-right: none; border-radius: 12px 0 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); backdrop-filter: blur(10px); transition: var(--transition-bounce); }
+        .sidebar-toggle-tab:hover { background: rgba(255,255,255,0.1); color: var(--primary); }
+        
+        .sidebar-friend-item { background: transparent; border-radius: var(--radius-sm); padding: 10px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; text-align: left; border-bottom: 1px solid var(--glass-border); }
+        .sidebar-friend-item:hover { background: rgba(255,255,255,0.04); }
+        .sidebar-friend-name { font-size: 0.8rem; font-weight: 600; color: var(--text-main); }
+        
+        .bg-owner-badge { font-size: 0.7rem; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 20px; margin-top: 5px; color: var(--text-muted); }
+        
+        #chat-content { font-size: 0.85rem; color: var(--text-muted); }
+        #chat-content b { color: var(--text-main); font-weight: 500; }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+        .badge.global { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge.specific { background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3); }
+        
+        /* Helper Animations */
+        .icon-btn { display: flex; align-items: center; justify-content: center; transition: var(--transition-bounce); cursor: pointer; color: var(--text-main); }
+        .icon-btn:hover { color: var(--primary); transform: scale(1.1); }
+        .icon-btn:active { transform: scale(0.9); }
+        
+        .ava-item:hover { transform: scale(1.1); background: rgba(255,255,255,0.08); border-radius: 12px; }
+        .inspect-box h3 { font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 20px; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    
+    <!-- ELEMEN AUDIO BACKGROUND MUSIC (Mengambil file lokal di github Anda) -->
+    <audio id="bgm" loop preload="auto">
+        <source src="musicxox.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="verify-notif" class="v-notif">Sistem: Akun Anda Telah Terverifikasi</div>
+
+    <div id="invite-modal" class="full-overlay">
+        <div class="inspect-box">
+            <!-- SVG Ikon Undangan Mabar yang elegan -->
+            <div style="margin-bottom: 15px; color: var(--primary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 12h4"></path><path d="M8 10v4"></path><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line>
+                </svg>
+            </div>
+            <h3 style="margin: 0; color: #fff;">UNDANGAN MABAR</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 15px 0;" id="invite-msg-text">Menunggu data...</p>
+            <div style="display: flex; gap: 12px; margin-top: 25px;">
+                <button class="btn btn-danger" style="margin:0;" onclick="rejectMatchInvite()">TOLAK</button>
+                <button class="btn btn-primary" style="margin:0;" onclick="acceptMatchInvite()">TERIMA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="follow-list-modal" class="full-overlay">
+        <div class="inspect-box" style="max-height: 75vh; display: flex; flex-direction: column;">
+            <h3 id="follow-list-title" style="margin-top: 0; margin-bottom: 15px;">FOLLOWERS</h3>
+            <div id="follow-list-content" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; scrollbar-width: none;"></div>
+            <button class="btn" style="margin-top: auto;" onclick="closeModal('follow-list-modal')">KEMBALI</button>
+        </div>
+    </div>
+
+    <div id="inspect-modal" class="full-overlay">
+        <div class="inspect-box">
+            <h3 style="margin-top: 0;">PROFIL PEMAIN</h3>
+            <div class="ava-frame" id="ins-ava" style="width: 80px; height: 80px; margin: 15px auto; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">👤</div>
+            <h2 id="ins-name" style="margin: 5px 0 0 0; font-size: 1.3rem; color: #fff; letter-spacing: 0; text-transform: none;">-</h2>
+            <p id="ins-uid" style="font-size: 0.75rem; color: var(--text-muted); margin: 0 0 20px 0;">ID: -</p>
+            
+            <div style="display: flex; justify-content: space-around; width: 100%; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md);">
+                <div style="cursor: pointer; text-align: center; flex: 1;" onclick="showFollowList('followers')">
+                    <b id="ins-followers" style="font-size: 1.1rem; color: #fff;">0</b><br>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Pengikut</span>
+                </div>
+                <div style="width: 1px; background: var(--glass-border); margin: 0 10px;"></div>
+                <div style="cursor: pointer; text-align: center; flex: 1;" onclick="showFollowList('following')">
+                    <b id="ins-following" style="font-size: 1.1rem; color: #fff;">0</b><br>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Mengikuti</span>
+                </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.2); border-radius: var(--radius-md); padding: 16px; margin-bottom: 25px; text-align: left; font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between;"><span>🌟 Level</span> <b id="ins-lv" style="color: var(--text-main);">Level 1</b></div>
+                <div style="display: flex; justify-content: space-between;"><span>⚡ EXP</span> <b id="ins-exp" style="color: var(--text-main);">0 / 100</b></div>
+                <div style="display: flex; justify-content: space-between;"><span>🎨 Skin</span> <b id="ins-skins" style="color: var(--text-main);">0</b></div>
+                <div style="display: flex; justify-content: space-between;"><span>🪙 Poin</span> <b id="ins-points" style="color: var(--gold);">0</b></div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-follow" style="margin-bottom: 10px;" onclick="actionToggleFollow()">FOLLOW</button>
+            <button class="btn" onclick="closeModal('inspect-modal')">TUTUP</button>
+        </div>
+    </div>
+
+    <div id="event-modal" class="full-overlay">
+        <div class="event-box" id="admin-message-box"></div>
+    </div>
+    
+    <div id="settings-modal" class="full-overlay">
+        <div class="inspect-box">
+            <h3>PENGATURAN</h3>
+            <button class="btn" onclick="nav('scr-profile'); closeModal('settings-modal')">Edit Profil</button>
+            <button class="btn btn-primary" onclick="nav('scr-store'); closeModal('settings-modal')">Tukar Poin</button>
+            <button class="btn btn-danger" style="margin-top: 15px;" onclick="closeModal('settings-modal')">Tutup</button>
+        </div>
+    </div>
+
+    <div class="app-container" id="main-container-frame">
+        
+        <div id="global-announcement" class="full-overlay" style="background: var(--bg-base); border-radius: var(--radius-xl);">
+            <div class="icon-btn" style="position:absolute; top:25px; right:25px; color: var(--text-muted);" onclick="closeModal('global-announcement')">
+                <!-- SVG Ikon Silang (Tutup) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            
+            <!-- SVG Ikon Piala (Trophy) Premium -->
+            <div style="margin-bottom: 20px; color: var(--gold);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+            </div>
+            <h1 class="vvip-fathur" style="font-size: 2rem;">The Champion</h1>
+            <p style="font-size: 1rem; color: var(--text-muted); margin: 20px 0; line-height: 1.6;">
+                Selamat kepada <br>
+                <span id="ann-name" style="font-size: 1.5rem; display: block; margin: 10px 0; font-weight:bold; color: #fff;">FATHUR RIZAM</span>
+                Telah Mencapai Status <br>
+                <span style="font-size: 1.2rem; display: block; margin-top: 10px; color: var(--gold);">FINISHED</span>
+            </p>
+            <button class="btn btn-primary" style="max-width: 250px; margin-top: 20px;" onclick="closeModal('global-announcement')">TUTUP</button>
+        </div>
+
+        <div id="overlay-result" class="full-overlay">
+            <h1 id="win-status" style="font-size: 2.5rem; margin-bottom: 10px;">GAME OVER</h1>
+            <div style="background: rgba(0,0,0,0.3); padding: 15px 30px; border-radius: var(--radius-lg); margin-bottom: 25px;">
+                <p id="reward-exp" style="color: var(--text-main); font-size: 1.2rem; font-weight: 600; margin-bottom: 5px;"></p>
+                <p id="reward-points" style="color: var(--gold); font-size: 1.2rem; font-weight: 600; margin-top: 0;"></p>
+            </div>
+            <p id="rematch-status" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px;"></p>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
+                <button class="btn btn-primary" id="btn-rematch" onclick="requestRematch()">REMATCH</button>
+                <button class="btn" onclick="exitRoomAction()">KEMBALI KE LOBBY</button>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="scr-login" class="screen active" style="justify-content: center;">
+            <div style="margin-bottom: 40px; text-align: center;">
+                <h1 style="font-size: 2.8rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">XOX PRIME</h1>
+                <p style="color: var(--primary); font-size: 0.8rem; letter-spacing: 3px; font-weight: 600; margin-top: 5px;">PRO EDITION</p>
+            </div>
+            <div style="width: 100%;">
+                <input type="text" id="login-user" placeholder="Username / ID">
+                <input type="password" id="login-pass" placeholder="Password">
+                <button class="btn btn-primary" style="margin-top: 10px; padding: 18px;" onclick="processLogin()">MASUK / DAFTAR</button>
+            </div>
+            <p style="font-size: 0.75rem; margin-top: 40px; color: var(--text-muted); font-weight: 400;">Secured by Ryzz CV</p>
+        </div>
+
+        <div id="scr-admin" class="screen">
+            <h2>DEV DASHBOARD</h2>
+            <div style="width:100%; background: rgba(0,0,0,0.2); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+                <h3 id="form-title" style="margin-top:0; font-size:0.95rem; font-weight:500; margin-bottom: 15px;">Buat Pengumuman Baru</h3>
+                <input type="hidden" id="edit-id">
+                <input type="text" id="msg-title" placeholder="Judul Pesan">
+                <textarea id="msg-content" placeholder="Isi pesan..."></textarea>
+                <select id="msg-target" onchange="toggleUidInput()">
+                    <option value="global">Semua Player (Global)</option>
+                    <option value="specific">Pemain Tertentu (Spesifik UID)</option>
+                </select>
+                <input type="text" id="msg-uid" placeholder="UID Pemain" style="display: none;">
+                <button class="btn btn-primary" id="btn-submit" onclick="saveMessage()">KIRIM PESAN</button>
+                <button class="btn btn-warning" id="btn-cancel" onclick="resetForm()" style="display:none;">BATAL</button>
+            </div>
+            <div style="width:100%; margin-top:20px; flex:1; overflow-y:auto;">
+                <h3 style="font-size:0.85rem; margin-bottom:10px; color:var(--text-muted); font-weight:500;">Riwayat Pesan</h3>
+                <div class="history-list" id="history-container"></div>
+            </div>
+            <button class="btn btn-danger" style="margin-top:15px;" onclick="handleLogout()">LOGOUT</button>
+        </div>
+
+        <div id="scr-home" class="screen">
+            <div class="lobby-layout-wrapper">
+                <div class="sidebar-friends-panel" id="lobby-sidebar-panel">
+                    <div class="sidebar-toggle-tab" onclick="toggleSidebarFriends()">
+                        <!-- SVG Ikon Users / Friends (Pengganti stiker 👥) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-bottom: 15px; text-align: left;">TEMAN ONLINE</div>
+                    <div class="sidebar-list-content" id="sidebar-online-list-target" style="flex:1; overflow-y:auto;"></div>
+                </div>
+
+                <div class="main-lobby-content" id="lobby-main-scrollable">
+                    <div class="user-card" id="my-card-element">
+                        <div class="ava-frame" id="my-ava" style="width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; cursor:pointer;" onclick="inspectUser(player.username)">👤</div>
+                        <div style="flex: 1; padding-left: 5px;">
+                            <b id="my-name-display" style="cursor:pointer; font-size: 1.05rem; color: #fff;" onclick="inspectUser(player.username)">-</b><span id="my-v-badge"></span><br>
+                            <small id="my-lv" style="color: var(--text-muted); font-weight: 500; font-size: 0.75rem;">Level 1</small>
+                            <div class="coin-display">🪙 <span id="my-points-display">0</span></div>
+                        </div>
+                        
+                        <!-- SVG Logo Mur / Pengaturan (Pengganti ⚙️) -->
+                        <button onclick="openModal('settings-modal')" style="background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text-main); width:45px; height:45px; border-radius:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition-bounce);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                        <button class="btn btn-primary" onclick="startSoloMode()">SOLO RANK</button>
+                        <button class="btn" style="background: rgba(255,255,255,0.05);" onclick="nav('scr-online-lobby')">MULTIPLAYER</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn" style="flex:1;" onclick="openShopScreen()">TOKO</button>
+                            <button class="btn" style="flex:1;" onclick="openLeaderboard()">RANKING</button>
+                        </div>
+                        <button class="btn" onclick="openFriendsList()">SOSIAL & TEMAN</button>
+                    </div>
+                    
+                    <div style="flex:1"></div>
+                    <button class="btn" style="opacity: 0.6; border:none; background: transparent; font-size: 0.85rem; padding:10px;" onclick="handleLogout()">Logout Account</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="scr-friends" class="screen">
+            <h2>SOSIAL</h2>
+            <div class="friend-sub-tabs">
+                <div class="friend-sub-tab active" id="f-tab-list" onclick="switchFriendTab('list')">Daftar Teman</div>
+                <div class="friend-sub-tab" id="f-tab-req" onclick="switchFriendTab('req')">Permintaan (<span id="req-count-badge">0</span>)</div>
+            </div>
+
+            <div id="friend-list-view" style="width:100%; display:flex; flex-direction:column; height:100%;">
+                <div style="display:flex; width:100%; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="search-friend-uid" placeholder="Cari ID Teman..." style="margin-bottom:0; flex:1; padding: 14px;">
+                    <button class="btn btn-primary btn-small" onclick="sendFriendRequestAction()" style="width:80px;">ADD</button>
+                </div>
+                <div id="friends-list-container" style="width: 100%; display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y: auto;"></div>
+            </div>
+
+            <div id="friend-req-view" style="width:100%; display:none; flex-direction:column; flex:1; overflow-y:auto; gap:10px;"></div>
+            <button class="btn" style="margin-top:15px;" onclick="nav('scr-home')">KEMBALI</button>
+        </div>
+
+        <div id="scr-store" class="screen">
+            <h2>PENUKARAN POIN</h2>
+            <div style="background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.2); padding: 25px 15px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 25px; width: 100%;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">Saldo Tersedia</p>
+                <b style="color: var(--gold); font-size: 2rem; font-weight: 700;">🪙 <span id="store-pts-display">0</span></b>
+            </div>
+            <button class="btn btn-primary" style="display:none;" onclick="openStoreScreen(); closeModal('settings-modal')">Tampilkan Poin</button>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
+                <button class="btn" onclick="openWithdraw(5000, '5k')">5.000 Pts</button>
+                <button class="btn" onclick="openWithdraw(10000, '10k')">10.000 Pts</button>
+                <button class="btn" onclick="openWithdraw(20000, '20k')">20.000 Pts</button>
+                <button class="btn" onclick="openWithdraw(50000, '50k')">50.000 Pts</button>
+            </div>
+            <div style="flex:1;"></div>
+            <button class="btn" onclick="nav('scr-home')">KEMBALI</button>
+        </div>
+
+        <div id="scr-profile" class="screen">
+            <h2>EDIT PROFIL</h2>
+            <div class="ava-frame" id="prev-ava" style="width:80px; height:80px; font-size:2.8rem; margin-bottom: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor:default;">👤</div>
+            
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; width: 100%; background: rgba(0,0,0,0.2); padding: 15px; border-radius: var(--radius-md);">
+                <!-- Emoji tetap untuk Avatar Game karena fitur seru dari koleksi karakter, UI dirapihkan -->
+                <div class="ava-item" onclick="setAva('👤')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">👤</div>
+                <div class="ava-item" onclick="setAva('🔥')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">🔥</div>
+                <div class="ava-item" onclick="setAva('⚡')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">⚡</div>
+                <div class="ava-item" onclick="setAva('💎')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">💎</div>
+                <div class="ava-item" onclick="setAva('🦊')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">🦊</div>
+                <div class="ava-item" onclick="setAva('🤖')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">🤖</div>
+                <div class="ava-item" onclick="setAva('🐱')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">🐱</div>
+                <div class="ava-item" onclick="setAva('🦁')" style="font-size:1.6rem; cursor:pointer; text-align:center; padding:5px;">🦁</div>
+            </div>
+            
+            <input type="text" id="new-display-name" placeholder="Nama Tampilan">
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px; width: 100%;">
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Sembunyikan Following Anda</span>
+                <input type="checkbox" id="hide-following-toggle" style="margin:0; width: 20px; height:20px;">
+            </div>
+
+            <div style="flex:1"></div>
+            <button class="btn btn-primary" onclick="saveNewProfile()">SIMPAN PERUBAHAN</button>
+            <button class="btn" onclick="nav('scr-home')">BATAL</button>
+        </div>
+
+        <div id="scr-shop" class="screen">
+            <h2>TOKO SKIN</h2>
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: var(--radius-md);">
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Dompet Anda:</span>
+                <b style="color: var(--gold); font-size: 1.1rem;">🪙 <span id="shop-wallet-display">0</span></b>
+            </div>
+            <div class="shop-tabs">
+                <div class="shop-tab active" id="tab-skin" onclick="switchShopTab('skin')">Bidak X / O</div>
+                <div class="shop-tab" id="tab-bg" onclick="switchShopTab('bg')">Latar Belakang</div>
+            </div>
+            <div class="shop-list" id="shop-items-container" style="flex:1;"></div>
+            <button class="btn" style="margin-top:15px;" onclick="nav('scr-home')">KEMBALI</button>
+        </div>
+
+        <div id="scr-leaderboard" class="screen">
+            <h2>TOP GLOBAL PLAYERS</h2>
+            <div id="lb-list-global" style="width: 100%; display: flex; flex-direction: column; gap: 8px; flex:1; overflow-y:auto; scrollbar-width:none;"></div>
+            <button class="btn" style="margin-top:15px;" onclick="back()">KEMBALI</button>
+        </div>
+
+        <div id="scr-online-lobby" class="screen">
+            <h2>MODE MULTIPLAYER</h2>
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; width:100%; gap: 15px;">
+                <button class="btn btn-primary" style="padding: 24px; font-size: 1rem;" onclick="createRoom()">BUAT ROOM BARU</button>
+                <div style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin: 10px 0;">ATAU</div>
+                <button class="btn" style="padding: 24px; font-size: 1rem; background:rgba(255,255,255,0.05);" onclick="nav('scr-join-room')">GABUNG VIA KODE</button>
+            </div>
+            <button class="btn" style="margin-top:auto;" onclick="nav('scr-home')">KEMBALI</button>
+        </div>
+
+        <div id="scr-join-room" class="screen">
+            <h2>GABUNG KE ROOM</h2>
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; width:100%; gap: 15px;">
+                <input type="number" id="join-code" placeholder="00000" style="text-align: center; font-size: 2.5rem; letter-spacing: 12px; padding: 25px; font-weight: 700; background: rgba(0,0,0,0.3);">
+                <button class="btn btn-primary" style="padding: 18px;" onclick="processJoin()">MASUK SEKARANG</button>
+            </div>
+            <button class="btn" style="margin-top:auto;" onclick="nav('scr-online-lobby')">BATAL</button>
+        </div>
+
+        <div id="scr-waiting" class="screen">
+            <h2>KODE ROOM ANDA</h2>
+            <h1 id="room-id-val" style="font-size: 4rem; margin: 20px 0; letter-spacing: 10px; color: var(--text-main);">00000</h1>
+            
+            <div style="width:100%; background:rgba(0,0,0,0.2); border-radius:var(--radius-md); padding:15px; margin-bottom:20px; flex:1; display:flex; flex-direction:column;">
+                <p style="font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:12px; text-align:left;">UNDANG TEMAN ONLINE</p>
+                <div id="lobby-friends-container" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1; scrollbar-width:none;"></div>
+            </div>
+
+            <div style="display: flex; gap:10px; width: 100%;">
+                <button class="btn btn-danger" style="flex:1;" onclick="exitRoomAction()">BATAL</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="copyInviteLink()">COPY KODE</button>
+            </div>
+        </div>
+
+        <div id="scr-game" class="screen">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom: 20px;">
+                <div id="bg-owner-info" class="bg-owner-badge" style="margin:0; font-size:0.65rem;">Latar Klasik</div>
+                <div id="game-info" style="font-weight: 600; font-size: 0.9rem; color: var(--primary);">PREPARING...</div>
+            </div>
+            
+            <div class="game-grid" style="margin: 10px 0 30px 0;">
+                <div class="tile" onclick="makeMove(0)"></div><div class="tile" onclick="makeMove(1)"></div><div class="tile" onclick="makeMove(2)"></div>
+                <div class="tile" onclick="makeMove(3)"></div><div class="tile" onclick="makeMove(4)"></div><div class="tile" onclick="makeMove(5)"></div>
+                <div class="tile" onclick="makeMove(6)"></div><div class="tile" onclick="makeMove(7)"></div><div class="tile" onclick="makeMove(8)"></div>
+            </div>
+            
+            <div id="social-tools" style="width: 100%; flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
+                <!-- Emoji Chat Stickers (Dibiarkan emoji agar bisa masuk teks chat) -->
+                <div style="display:flex; justify-content:center; gap:25px; margin-bottom: 15px;">
+                    <span class="icon-btn" style="font-size:1.8rem;" onclick="sticker('😎')">😎</span>
+                    <span class="icon-btn" style="font-size:1.8rem;" onclick="sticker('🔥')">🔥</span>
+                    <span class="icon-btn" style="font-size:1.8rem;" onclick="sticker('💀')">💀</span>
+                    <span class="icon-btn" style="font-size:1.8rem;" onclick="sticker('👍')">👍</span>
+                </div>
+                <div style="width:100%; background: rgba(0,0,0,0.2); border-radius:var(--radius-md); padding:12px; height:120px; display:flex; flex-direction:column;">
+                    <div id="chat-content" style="flex:1; overflow-y:auto; margin-bottom:10px; padding-right: 5px; scrollbar-width:none;"></div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="chat-in" placeholder="Ketik pesan..." style="flex:1; margin-bottom:0; padding:12px 14px; border-radius: var(--radius-sm); font-size: 0.85rem;">
+                        
+                        <!-- SVG Logo Kirim Chat (Pengganti ➤) -->
+                        <button onclick="sendChat()" class="btn-primary" style="width:48px; border-radius:var(--radius-sm); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition-bounce);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: translateX(-2px);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnO4RRw9Yy6qKDN98T-VgM8P4_IuA6zIs",
+            authDomain: "chat-fathur-2026.firebaseapp.com",
+            projectId: "chat-fathur-2026",
+            baseURL: "https://chat-fathur-2026-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let player = null, roomCode = null, side = null, isTurn = false, vsAI = false, aiBoard = Array(9).fill(""), lastScr = 'scr-login', pickedAva = '👤';
+        let aiDifficulty = 50; 
+        
+        const verifiedUsers = ['fathurrizamreal', 'deni', 'chromss','anriees', 'burik celleng', 'nab-nab'];
+        let hasShownVerifyNotif = false, matchEnded = false;
+        let currentShopTab = 'skin', currentFriendTab = 'list';
+        let currentInviteData = null; 
+        
+        let viewedAnnouncements = JSON.parse(localStorage.getItem('viewed_announcements')) || [];
+        let currentInspectUid = null, currentIsFollowing = false;
+
+        const shopSkins = [
+            { id: 'skin_default', name: 'Default Classic', desc: 'Gaya orisinal X & O bawaan.', price: 0, xColor: '#e4e4e7', xShadow: 'rgba(255,255,255,0.1)', oColor: '#94a3b8', oShadow: 'rgba(148,163,184,0.1)' },
+            { id: 'skin_cyber', name: 'Neon Cyberpunk', desc: 'Cahaya fusi masa depan laser.', price: 250, xColor: '#0ea5e9', xShadow: 'rgba(14,165,233,0.5)', oColor: '#d946ef', oShadow: 'rgba(217,70,239,0.5)' },
+            { id: 'skin_gold', name: 'Golden Royal', desc: 'Kilauan emas murni para juara.', price: 600, xColor: '#fbbf24', xShadow: 'rgba(251,191,36,0.5)', oColor: '#fef08a', oShadow: 'rgba(254,240,138,0.5)' },
+            { id: 'skin_fire', name: 'Fire Phoenix', desc: 'Bara api magis merah menyala.', price: 1000, xColor: '#ef4444', xShadow: 'rgba(239,68,68,0.5)', oColor: '#f97316', oShadow: 'rgba(249,115,22,0.5)' },
+            { id: 'skin_shadow', name: 'Dark Shadow', desc: 'Gaya hantu kegelapan misterius.', price: 1500, xColor: '#334155', xShadow: 'rgba(0,0,0,0.5)', oColor: '#64748b', oShadow: 'rgba(0,0,0,0.3)' },
+            { id: 'skin_ruby', name: 'Ruby Demon', desc: 'Kekuatan kristal iblis darah.', price: 2500, xColor: '#b91c1c', xShadow: 'rgba(185,28,28,0.6)', oColor: '#f43f5e', oShadow: 'rgba(244,63,94,0.5)' },
+            { id: 'skin_ryzz_computi', name: 'Ryzz Computi Skin', desc: 'Efek realistis cyber-computing premium.', price: 20000, xColor: '#2dd4bf', xShadow: 'rgba(45,212,191,0.6)', oColor: '#f8fafc', oShadow: 'rgba(255,255,255,0.4)' },
+            { id: 'skin_fath_legend', name: 'The Fath Is Legend', desc: 'Skin eksklusif legenda sejati.', price: 5000, xColor: '#fbbf24', xShadow: 'rgba(251,191,36,0.8)', oColor: '#ffffff', oShadow: 'rgba(255,255,255,0.8)' }
+        ];
+
+        const shopBgs = [
+            { id: 'bg_default', name: 'Default Premium', desc: 'Latar minimalis elegan aplikasi.', price: 0, css: 'radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%), radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%)' },
+            { id: 'bg_space', name: 'Space Nebula', desc: 'Atmosfer kosmik luar angkasa luas.', price: 300, css: 'linear-gradient(135deg, #1e1b4b, #0f172a)' },
+            { id: 'bg_cyber', name: 'Cyberpunk Grid', desc: 'Dunia simulasi kota malam neon.', price: 700, css: 'linear-gradient(135deg, #082f49, #020617)' },
+            { id: 'bg_lava', name: 'Lava Inferno', desc: 'Magma panas bergejolak di medan perang.', price: 1200, css: 'linear-gradient(135deg, #450a0a, #020617)' },
+            { id: 'bg_emerald', name: 'Emerald Forest', desc: 'Nuansa alam fantasi hijau mistis.', price: 1800, css: 'linear-gradient(135deg, #064e3b, #020617)' },
+            { id: 'bg_matrix', name: 'Matrix Glitch', desc: 'Kode digital enkripsi dunia virtual.', price: 3000, css: 'linear-gradient(135deg, #052e16, #020617)' }
+        ];
+
+        window.onload = () => {
+            const u = localStorage.getItem('xox_u'), p = localStorage.getItem('xox_p');
+            if(u && p) { document.getElementById('login-user').value = u; document.getElementById('login-pass').value = p; processLogin(true); }
+        };
+
+        /* FUNGSI NAVIGASI SUPER SMOOTH DENGAN CROSSFADE */
+        function nav(id) { 
+            const current = document.querySelector('.screen.active');
+            if(current && current.id === id) return;
+
+            if(current) {
+                lastScr = current.id;
+                current.style.animation = 'screenExit 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                
+                setTimeout(() => {
+                    current.classList.remove('active');
+                    current.style.animation = ''; 
+                    activateScreen(id);
+                }, 320); // Tunggu animasi keluar selesai
+            } else {
+                activateScreen(id);
+            }
+        }
+        
+        function activateScreen(id) {
+            const next = document.getElementById(id);
+            void next.offsetWidth; // Trigger reflow untuk reset animasi CSS
+            next.classList.add('active'); 
+            
+            applyEquippedSkins();
+            const ryzzActive = player && player.activeSkin === 'skin_ryzz_computi';
+            if(ryzzActive){
+                document.querySelectorAll('.tile').forEach(t=>{
+                    t.style.background='rgba(15, 23, 42, 0.8)';
+                    t.style.boxShadow='inset 0 0 10px rgba(45, 212, 191, 0.2)';
+                    t.style.borderColor='rgba(45, 212, 191, 0.3)';
+                });
+            } else {
+                 document.querySelectorAll('.tile').forEach(t=>{ t.style.background=''; t.style.boxShadow=''; t.style.borderColor=''; });
+            }
+            if(id === 'scr-home') updateSidebarFriendsList();
+        }
+
+        function back() { nav(lastScr); }
+
+        /* MANAJEMEN MODAL / POP-UP YANG SMOOTH */
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        function processLogin(auto = false) {
+            // Putar Musik
+            const bgm = document.getElementById('bgm');
+            if(bgm && bgm.paused) {
+                bgm.volume = 0.35; // Set volume enak di telinga (35%)
+                bgm.play().catch(err => console.log("Browser memblokir Autoplay Musik:", err));
+            }
+
+            const u = document.getElementById('login-user').value.trim().toLowerCase();
+            const p = document.getElementById('login-pass').value.trim();
+            if(!u || !p) return;
+            
+            if(u === '👌' && p === '👌') { nav('scr-admin'); fetchHistory(); return; }
+
+            db.ref('players/' + u).once('value', snap => {
+                let data;
+                if(snap.exists()) { 
+                    data = snap.val(); 
+                    if(data.pass !== p) return auto ? handleLogout() : alert("Wrong Password!"); 
+                    if(data.points === undefined) data.points = 0;
+                    if(!data.ownedSkins) data.ownedSkins = ['skin_default'];
+                    if(!data.ownedBgs) data.ownedBgs = ['bg_default'];
+                    if(!data.activeSkin) data.activeSkin = 'skin_default';
+                    if(!data.activeBg) data.activeBg = 'bg_default';
+                    if(!data.friends) data.friends = [];
+                    if(!data.followers) data.followers = [];
+                    if(!data.following) data.following = [];
+                    if(data.hideFollowing === undefined) data.hideFollowing = false;
+                } else { 
+                    data = { 
+                        username: u, name: u, pass: p, lv: 1, exp: 0, ava: '👤', points: 0, 
+                        status: 'lobby', ownedSkins: ['skin_default'], ownedBgs: ['bg_default'], 
+                        activeSkin: 'skin_default', activeBg: 'bg_default', friends: [],
+                        followers: [], following: [], hideFollowing: false
+                    }; 
+                }
+                
+                if(u === 'chromss') data.lv = 57676;
+                if(u === 'anriees') data.lv = 9340349;
+                if(u === 'fathurrizamreal') { data.lv = 999999; data.points = 9000000; }
+
+                data.status = 'lobby'; 
+                db.ref('players/' + u).update(data);
+                localStorage.setItem('xox_u', u); localStorage.setItem('xox_p', p);
+                player = data; 
+                syncUI(); applyEquippedSkins(); listenInvites(); listenFriendRequests(); listenAnnouncements();
+                db.ref('settings/aiDifficulty').on('value', snap => { if(snap.exists()) aiDifficulty = snap.val(); });
+                
+                nav('scr-home');
+                setInterval(()=>{
+                    if(player){ db.ref('players/' + player.username).update({ lastSeen: Date.now(), status: document.hidden ? 'away' : 'lobby' }); }
+                },15000);
+
+                if(verifiedUsers.includes(u) && !hasShownVerifyNotif) {
+                    const vNotif = document.getElementById('verify-notif');
+                    vNotif.classList.add('show'); hasShownVerifyNotif = true;
+                    setTimeout(() => { vNotif.classList.remove('show'); }, 5000);
+                }
+                setInterval(() => { if(document.getElementById('scr-home').classList.contains('active')) updateSidebarFriendsList(); }, 4000);
+            });
+        }
+
+        function toggleUidInput() {
+            const target = document.getElementById('msg-target').value;
+            document.getElementById('msg-uid').style.display = target === 'specific' ? 'block' : 'none';
+        }
+
+        function saveMessage() {
+            const id = document.getElementById('edit-id').value || Date.now().toString();
+            const title = document.getElementById('msg-title').value.trim();
+            const content = document.getElementById('msg-content').value.trim();
+            const target = document.getElementById('msg-target').value;
+            const targetUid = document.getElementById('msg-uid').value.trim().toLowerCase();
+
+            if(!title || !content) return alert("Judul dan isi pesan wajib diisi!");
+            if(target === 'specific' && !targetUid) return alert("Masukkan UID Pemain spesifik!");
+
+            const msgData = { id: id, title: title, content: content, target: target, targetUid: target === 'specific' ? targetUid : 'all', timestamp: Date.now() };
+
+            db.ref('announcements/' + id).set(msgData).then(() => { alert("Pesan berhasil dikirim!"); resetForm(); });
+        }
+
+        function openWithdraw(pts, nominal) {
+            if (player.points < pts) { alert("⚠️ Poin Tidak Cukup!\nKumpulkan lebih banyak poin dengan memenangkan pertandingan."); return; }
+            let noKontak = prompt(`Tukar ${pts} Poin dengan Voucher Hadiah ${nominal}?\nMasukkan Nomor Akun/Kontak Anda:`);
+            if (noKontak && noKontak.length >= 10) {
+                alert("Verifikasi Sistem:\nUntuk menukar Poin menjadi Voucher Hadiah, Akun Anda harus berstatus Aktif.");
+                let waLink = `https://wa.me/6285608906983?text=Saya%20ingin%20Melakukan%20Klaim%20Voucher%20Hadiah.%20ID:%20${player.username}%20Kontak:%20${noKontak}%20Nominal:%20${nominal}`;
+                window.open(waLink, '_blank');
+            } else if (noKontak !== null) { alert("Nomor atau Kontak tidak valid!"); }
+        }
+
+        function openStoreScreen() {
+            nav('scr-store');
+            const storePtsDisplay = document.getElementById('store-pts-display');
+            if (storePtsDisplay) { storePtsDisplay.innerText = player.points.toLocaleString('id-ID'); }
+        }
+
+        function fetchHistory() {
+            db.ref('announcements').on('value', snap => {
+                const container = document.getElementById('history-container'); container.innerHTML = '';
+                if(!snap.exists()) { container.innerHTML = '<div style="opacity:0.5; text-align:center;">Belum ada riwayat pesan.</div>'; return; }
+                const data = snap.val();
+                const sortedKeys = Object.keys(data).sort((a, b) => data[b].timestamp - data[a].timestamp);
+
+                sortedKeys.forEach(key => {
+                    const msg = data[key];
+                    const badgeClass = msg.target === 'global' ? 'global' : 'specific';
+                    const targetText = msg.target === 'global' ? 'Global' : `UID: ${msg.targetUid}`;
+                    container.innerHTML += `
+                        <div class="history-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <b style="color:var(--text-main); font-size: 0.9rem;">${msg.title}</b><span class="badge ${badgeClass}">${targetText}</span>
+                            </div>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">${msg.content}</p>
+                            <div style="display:flex; gap:10px; margin-top: 5px;">
+                                <button class="btn btn-warning btn-small" style="flex:1;" onclick="editMessage('${msg.id}')">EDIT</button>
+                                <button class="btn btn-danger btn-small" style="flex:1;" onclick="deleteMessage('${msg.id}')">HAPUS</button>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+
+        function editMessage(id) {
+            db.ref('announcements/' + id).once('value', snap => {
+                if(!snap.exists()) return; const msg = snap.val();
+                document.getElementById('form-title').innerText = "Edit Pengumuman"; document.getElementById('edit-id').value = msg.id;
+                document.getElementById('msg-title').value = msg.title; document.getElementById('msg-content').value = msg.content;
+                document.getElementById('msg-target').value = msg.target; document.getElementById('msg-uid').value = msg.target === 'specific' ? msg.targetUid : '';
+                toggleUidInput(); document.getElementById('btn-submit').innerText = "UPDATE PESAN"; document.getElementById('btn-cancel').style.display = "block";
+            });
+        }
+
+        function deleteMessage(id) { if(confirm("Yakin ingin menghapus pesan ini?")) { db.ref('announcements/' + id).remove(); } }
+        function resetForm() { document.getElementById('form-title').innerText = "Buat Pengumuman Baru"; document.getElementById('edit-id').value = ''; document.getElementById('msg-title').value = ''; document.getElementById('msg-content').value = ''; document.getElementById('msg-target').value = 'global'; document.getElementById('msg-uid').value = ''; toggleUidInput(); document.getElementById('btn-submit').innerText = "KIRIM PESAN SEKARANG"; document.getElementById('btn-cancel').style.display = "none"; }
+
+        function listenAnnouncements() {
+            db.ref('announcements').on('value', snap => {
+                if (!snap.exists()) { closeModal('event-modal'); return; }
+                const data = snap.val();
+                const keys = Object.keys(data).sort((a, b) => data[b].timestamp - data[a].timestamp);
+                
+                for (let i = 0; i < keys.length; i++) {
+                    const msg = data[keys[i]];
+                    const isTargeted = (msg.target === 'global') || (msg.target === 'specific' && msg.targetUid === player.username);
+                    if (isTargeted && !viewedAnnouncements.includes(msg.id)) { tampilkanPesanAdmin(msg); return; }
+                }
+            });
+        }
+
+        function tampilkanPesanAdmin(msg) {
+            const box = document.getElementById('admin-message-box');
+            box.innerHTML = `<h2 style="margin-top:0; color:var(--text-main); font-size:1.1rem;">${msg.title}</h2><div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); margin: 20px 0;">${msg.content}</div><button class="btn btn-primary" onclick="tutupPesanAdmin('${msg.id}')">MENGERTI</button>`;
+            openModal('event-modal');
+        }
+
+        function tutupPesanAdmin(msgId) { closeModal('event-modal'); viewedAnnouncements.push(msgId); localStorage.setItem('viewed_announcements', JSON.stringify(viewedAnnouncements)); listenAnnouncements(); }
+        function handleLogout() { if(player) db.ref('players/' + player.username).update({ status: 'offline' }); localStorage.clear(); location.reload(); }
+
+        function syncUI() {
+            if(!player) return;
+            const myAva = document.getElementById('my-ava'), prevAva = document.getElementById('prev-ava'), myCard = document.getElementById('my-card-element'), myName = document.getElementById('my-name-display'), myLv = document.getElementById('my-lv'), myBadge = document.getElementById('my-v-badge');
+            myCard.classList.remove('user-card-fathur'); myName.classList.remove('vvip-fathur'); myAva.classList.remove('ava-legendary'); prevAva.classList.remove('ava-legendary');
+
+            document.getElementById('my-points-display').innerText = player.points.toLocaleString('id-ID');
+
+            if(player.username === 'fathurrizamreal') {
+                myCard.classList.add('user-card-fathur'); myAva.classList.add('ava-legendary'); prevAva.classList.add('ava-legendary');
+                myAva.innerHTML = "V"; prevAva.innerHTML = "VVIP";
+                myName.innerText = player.name; myName.classList.add('vvip-fathur');
+                myBadge.innerHTML = '<span class="v-legend">✓</span>';
+                myLv.innerHTML = '<span style="color:var(--gold);">CHAMPION / FINISHED</span>';
+            } else {
+                myAva.innerText = player.ava; prevAva.innerText = player.ava;
+                myName.innerText = player.name;
+                myBadge.innerHTML = verifiedUsers.includes(player.username) ? '<span class="v-badge">✓</span>' : '';
+                myLv.innerText = `Level ${player.lv} (${player.exp}/100 XP)`;
+            }
+            document.getElementById('new-display-name').value = player.name; pickedAva = player.ava;
+            document.getElementById('hide-following-toggle').checked = player.hideFollowing === true;
+        }
+
+        function setAva(a) { if(player.username === 'fathurrizamreal') return; pickedAva = a; document.getElementById('prev-ava').innerText = a; }
+
+        function saveNewProfile() {
+            const n = document.getElementById('new-display-name').value.trim();
+            if(!n) return; player.name = n; player.ava = pickedAva; player.hideFollowing = document.getElementById('hide-following-toggle').checked;
+            db.ref('players/' + player.username).update({ name: n, ava: pickedAva, hideFollowing: player.hideFollowing });
+            syncUI(); nav('scr-home');
+        }
+
+        function toggleSidebarFriends() {
+            const panel = document.getElementById('lobby-sidebar-panel'); const content = document.getElementById('lobby-main-scrollable');
+            panel.classList.toggle('open');
+            if(panel.classList.contains('open')) { content.style.transform = "translateX(-80px)"; updateSidebarFriendsList(); } else { content.style.transform = "translateX(0px)"; }
+        }
+
+        function updateSidebarFriendsList() {
+            const listTarget = document.getElementById('sidebar-online-list-target');
+            if(!player || !player.friends || player.friends.length === 0) { listTarget.innerHTML = '<div style="font-size:0.75rem; text-align:center; color:var(--text-muted); margin-top:20px;">Daftar Kosong</div>'; return; }
+            listTarget.innerHTML = '';
+            player.friends.forEach(fUid => {
+                db.ref('players/' + fUid).once('value', snap => {
+                    if(!snap.exists()) return; const d = snap.val(); const isOnline = (Date.now() - (d.lastSeen || 0)) < 45000 && (d.status === 'lobby' || d.status === 'playing');
+                    let vTagInline = d.username === 'fathurrizamreal' ? '<span class="v-legend-inline">✓</span>' : (verifiedUsers.includes(d.username) ? '<span class="v-badge-inline">✓</span>' : '');
+                    let statusText = isOnline ? (d.status === 'playing' ? 'In-Game' : 'Lobby') : 'Offline'; let statusColor = isOnline ? 'var(--success)' : 'var(--text-muted)';
+                    listTarget.innerHTML += `<div class="sidebar-friend-item" onclick="inspectUser('${d.username}')"><div class="sidebar-friend-name">${d.name}${vTagInline}</div><div style="font-size:0.65rem; display:flex; align-items:center; gap:4px;"><span class="status-dot ${isOnline ? 'status-online' : 'status-offline'}" style="margin:0; width:6px; height:6px;"></span><span style="color:${statusColor};">${statusText}</span></div></div>`;
+                });
+            });
+        }
+
+        function inspectUser(uid) {
+            currentInspectUid = uid;
+            db.ref('players/' + uid).once('value', snap => {
+                if(!snap.exists()) return; const d = snap.val();
+                document.getElementById('ins-name').innerText = d.name; document.getElementById('ins-uid').innerText = `ID: ${d.username}`; document.getElementById('ins-ava').innerText = d.username === 'fathurrizamreal' ? "V" : d.ava;
+                if(d.username === 'fathurrizamreal') { document.getElementById('ins-lv').innerHTML = '<span style="color:var(--gold);">CHAMPION</span>'; } else { document.getElementById('ins-lv').innerText = `Level ${d.lv}`; }
+                document.getElementById('ins-exp').innerText = `${d.exp || 0} / 100 XP`; document.getElementById('ins-points').innerText = `${(d.username === 'fathurrizamreal' ? 9000000 : (d.points || 0)).toLocaleString('id-ID')} Pts`; document.getElementById('ins-skins').innerText = d.ownedSkins ? d.ownedSkins.length : 0;
+                document.getElementById('ins-followers').innerText = d.followers ? d.followers.length : 0; document.getElementById('ins-following').innerText = d.following ? d.following.length : 0;
+                const btnFollow = document.getElementById('btn-follow');
+                if (uid === player.username) { btnFollow.style.display = 'none'; } else {
+                    btnFollow.style.display = 'flex'; currentIsFollowing = player.following && player.following.includes(uid);
+                    if (currentIsFollowing) { btnFollow.innerText = 'UNFOLLOW'; btnFollow.classList.remove('btn-primary'); btnFollow.style.background = 'rgba(255,255,255,0.05)'; btnFollow.style.border = '1px solid var(--glass-border)'; } else { btnFollow.innerText = 'FOLLOW'; btnFollow.classList.add('btn-primary'); btnFollow.style.background = ''; btnFollow.style.border = 'none'; }
+                }
+                openModal('inspect-modal'); closeModal('follow-list-modal');
+            });
+        }
+        
+        function actionToggleFollow() {
+            if(!currentInspectUid || currentInspectUid === player.username) return;
+            const targetUid = currentInspectUid;
+            db.ref('players/' + targetUid).once('value', snap => {
+                if(!snap.exists()) return; let targetData = snap.val();
+                if(!targetData.followers) targetData.followers = []; if(!player.following) player.following = [];
+                if (currentIsFollowing) { targetData.followers = targetData.followers.filter(id => id !== player.username); player.following = player.following.filter(id => id !== targetUid); } else { if(!targetData.followers.includes(player.username)) targetData.followers.push(player.username); if(!player.following.includes(targetUid)) player.following.push(targetUid); }
+                db.ref('players/' + targetUid).update({ followers: targetData.followers }); db.ref('players/' + player.username).update({ following: player.following }); inspectUser(targetUid);
+            });
+        }
+
+        function showFollowList(type) {
+            if(!currentInspectUid) return;
+            db.ref('players/' + currentInspectUid).once('value', snap => {
+                if(!snap.exists()) return; const d = snap.val();
+                if(type === 'following' && d.hideFollowing === true && currentInspectUid !== player.username) { alert("Pemain ini memprivasi daftar akun yang ia ikuti."); return; }
+                const listIds = type === 'followers' ? (d.followers || []) : (d.following || []); const content = document.getElementById('follow-list-content'); document.getElementById('follow-list-title').innerText = (type === 'followers' ? "PENGIKUT" : "MENGIKUTI");
+                openModal('follow-list-modal');
+                if(listIds.length === 0) { content.innerHTML = '<div style="color:var(--text-muted); text-align:center; font-size:0.85rem; margin-top:30px;">Daftar masih kosong.</div>'; return; }
+                content.innerHTML = '<div style="color:var(--text-muted); text-align:center; font-size:0.85rem; margin-top:30px;">Memuat data...</div>';
+                let listHtml = '', loaded = 0;
+                listIds.forEach(id => {
+                    db.ref('players/' + id).once('value', psnap => {
+                        loaded++;
+                        if(psnap.exists()) { const pData = psnap.val(); listHtml += `<div class="lb-row" style="padding:12px; cursor:pointer;" onclick="inspectUser('${pData.username}')"><div class="ava-frame" style="font-size:1.5rem; display:flex; align-items:center; justify-content:center; width: 45px; height: 45px; border-radius: 50%;">${pData.ava}</div><div style="flex:1; text-align:left; padding-left:10px;"><b style="font-size:0.95rem;">${pData.name}</b><br><small style="color:var(--text-muted); font-size: 0.75rem;">ID: ${pData.username}</small></div></div>`; }
+                        if (loaded === listIds.length) { content.innerHTML = listHtml; }
+                    });
+                });
+            });
+        }
+
+        function openFriendsList() { nav('scr-friends'); switchFriendTab('list'); }
+        function switchFriendTab(tab) { currentFriendTab = tab; document.getElementById('f-tab-list').classList.toggle('active', tab === 'list'); document.getElementById('f-tab-req').classList.toggle('active', tab === 'req'); if(tab === 'list') { document.getElementById('friend-list-view').style.display = 'flex'; document.getElementById('friend-req-view').style.display = 'none'; renderFriendsListMenu(); } else { document.getElementById('friend-list-view').style.display = 'none'; document.getElementById('friend-req-view').style.display = 'flex'; renderIncomingRequestsMenu(); } }
+        function sendFriendRequestAction() {
+            const fUid = document.getElementById('search-friend-uid').value.trim().toLowerCase();
+            if(!fUid || fUid === player.username) return alert("ID Tidak Valid!");
+            db.ref('players/' + fUid).once('value', snap => { if(!snap.exists()) return alert("User ID tidak ditemukan!"); if(player.friends && player.friends.includes(fUid)) return alert("Sudah berteman dengan akun ini!"); db.ref(`friendRequests/${fUid}/${player.username}`).set({ fromUid: player.username, fromName: player.name, fromAva: player.ava }); document.getElementById('search-friend-uid').value = ''; alert("Permintaan pertemanan dikirim!"); });
+        }
+        function listenFriendRequests() { db.ref('friendRequests/' + player.username).on('value', snap => { const count = snap.exists() ? Object.keys(snap.val()).length : 0; document.getElementById('req-count-badge').innerText = count; if(currentFriendTab === 'req') renderIncomingRequestsMenu(); }); }
+        
+        function renderIncomingRequestsMenu() {
+            const view = document.getElementById('friend-req-view'); view.innerHTML = '';
+            db.ref('friendRequests/' + player.username).once('value', snap => {
+                if(!snap.exists()) { view.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:40px;">Tidak ada permintaan.</div>'; return; }
+                snap.forEach(child => { const r = child.val(); view.innerHTML += `<div class="lb-row" style="cursor:default;"><div class="ava-frame" style="font-size:1.5rem; width:45px; height:45px; display:flex; align-items:center; justify-content:center; border-radius:50%;">${r.fromAva || '👤'}</div><div style="flex:1; text-align:left;"><b>${r.fromName}</b><br><small style="color:var(--text-muted);">ID: ${r.fromUid}</small></div><div style="display:flex; gap:8px;"><button class="btn-shop-action btn-buy" style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:var(--success); min-width:50px;" onclick="acceptFriendship('${r.fromUid}')">✔</button><button class="btn-shop-action btn-danger" style="min-width:50px;" onclick="rejectFriendship('${r.fromUid}')">✖</button></div></div>`; });
+            });
+        }
+
+        function acceptFriendship(targetUid) { if(!player.friends) player.friends = []; if(!player.friends.includes(targetUid)) player.friends.push(targetUid); db.ref('players/' + player.username).update({ friends: player.friends }); db.ref('players/' + targetUid).once('value', snap => { if(snap.exists()) { let d = snap.val(); if(!d.friends) d.friends = []; if(!d.friends.includes(player.username)) d.friends.push(player.username); db.ref('players/' + targetUid).update({ friends: d.friends }); } }); db.ref(`friendRequests/${player.username}/${targetUid}`).remove(); alert("Sekarang Anda telah berteman!"); switchFriendTab('list'); updateSidebarFriendsList(); }
+        function rejectFriendship(targetUid) { db.ref(`friendRequests/${player.username}/${targetUid}`).remove(); renderIncomingRequestsMenu(); }
+
+        function renderFriendsListMenu() {
+            const container = document.getElementById('friends-list-container'); container.innerHTML = '';
+            if(!player.friends || player.friends.length === 0) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:20px;">Belum ada teman.</div>'; return; }
+            player.friends.forEach(fUid => { db.ref('players/' + fUid).once('value', snap => { if(!snap.exists()) return; const d = snap.val(); const isOnline = (Date.now() - (d.lastSeen || 0)) < 45000 && (d.status === 'lobby' || d.status === 'playing'); const dot = `<span class="status-dot ${isOnline ? 'status-online' : 'status-offline'}"></span>`; container.innerHTML += `<div class="lb-row" onclick="inspectUser('${d.username}')"><div class="ava-frame" style="font-size:1.5rem; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;">${d.ava}</div><div style="flex:1; text-align:left; padding-left:5px;"><b>${d.name}</b><br><small style="font-weight: 500; color:var(--text-muted);">${dot}${isOnline ? (d.status === 'playing' ? 'Bertanding' : 'Online/Lobby') : 'Offline'}</small></div></div>`; }); });
+        }
+
+        function renderLobbyFriends() {
+            const container = document.getElementById('lobby-friends-container'); container.innerHTML = '';
+            if(!player.friends || player.friends.length === 0) { container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin:10px 0;">Ajak teman untuk berteman dahulu.</div>'; return; }
+            player.friends.forEach(fUid => { db.ref('players/' + fUid).once('value', snap => { if(!snap.exists()) return; const d = snap.val(); if(d.status === 'lobby') { container.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px 15px; border-radius:var(--radius-sm); border:1px solid var(--glass-border);"><div style="text-align:left; font-size:0.85rem;"><b>${d.name}</b> <span style="font-size:0.7rem; color:var(--success);">(Online)</span></div><button class="btn-shop-action" style="background:var(--primary); color:#fff; border:none; min-width:70px; padding:8px 12px; border-radius:var(--radius-sm);" onclick="sendMatchInvite('${d.username}')">INVITE</button></div>`; } }); });
+        }
+
+        function sendMatchInvite(targetUid) { db.ref('invites/' + targetUid).set({ fromName: player.name, fromUid: player.username, roomCode: roomCode }); alert("Undangan dikirim!"); }
+        function listenInvites() { db.ref('invites/' + player.username).on('value', snap => { if(!snap.exists()) return; currentInviteData = snap.val(); document.getElementById('invite-msg-text').innerHTML = `<b>${currentInviteData.fromName}</b> mengundang Anda!`; openModal('invite-modal'); }); }
+        
+        function acceptMatchInvite() {
+            if(!currentInviteData) return; const code = currentInviteData.roomCode; db.ref('invites/' + player.username).remove(); closeModal('invite-modal');
+            db.ref('rooms/' + code).once('value', snap => {
+                if(snap.exists() && snap.val().status === 'wait') { roomCode = code; side = 'O'; vsAI = false; matchEnded = false; db.ref('rooms/' + code).update({ status: 'play', p2: player.username, p2Skin: player.activeSkin, p2Bg: player.activeBg, p2Name: player.name }); db.ref('players/' + player.username).update({ status: 'playing' }); listenRoom(); } else { alert("Room penuh/tutup!"); }
+            });
+        }
+        function rejectMatchInvite() { db.ref('invites/' + player.username).remove(); closeModal('invite-modal'); currentInviteData = null; }
+        
+        function openLeaderboard() {
+            nav('scr-leaderboard'); const list = document.getElementById('lb-list-global'); list.innerHTML = '<div style="text-align:center; color:var(--text-muted); margin-top:30px;">Connecting...</div>';
+            db.ref('players').once('value').then(snap => {
+                let players = []; snap.forEach(c => { let d = c.val(); if(d.username === 'fathurrizamreal') { d.lv = 9999999999999999999; d.points = 9000000; } if(d.username === 'chromss') d.lv = 670349; if(d.username === 'anriees') d.lv = 9340349; if(d.username === 'deni') d.lv = 9658562; players.push(d); }); players.sort((a, b) => b.lv - a.lv || b.exp - a.exp); let top10 = players.slice(0, 10); list.innerHTML = '';
+                top10.forEach((p, i) => { let isFathur = p.username === 'fathurrizamreal'; let rClass = isFathur ? 'user-card-fathur' : (i === 0 ? 'rank-1' : ''); let vTag = '', lvDisplay = `Lv ${p.lv}`, displayName = p.name, avaContent = p.ava, avaClass = ''; if(isFathur) { vTag = '<span class="v-legend">✓</span>'; lvDisplay = '<span style="color:var(--gold);">CHAMPION</span>'; avaContent = "V"; avaClass = 'ava-legendary'; } else if(verifiedUsers.includes(p.username)) { vTag = '<span class="v-badge">✓</span>'; }
+                    list.innerHTML += `<div class="lb-row ${rClass}" onclick="inspectUser('${p.username}')"><div style="font-weight:700; width:20px; font-size:1rem; color:var(--text-muted);">${i+1}</div><div class="ava-frame ${avaClass}" style="width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">${avaContent}</div><div style="flex:1; text-align:left; padding-left:10px;"><b>${displayName}</b>${vTag}</div><div style="font-weight:600; color:var(--text-muted); font-size: 0.85rem;">${lvDisplay}</div></div>`;
+                });
+            });
+        }
+
+        function openShopScreen() { nav('scr-shop'); document.getElementById('shop-wallet-display').innerText = player.points.toLocaleString('id-ID'); renderShopItems(); }
+        function switchShopTab(tab) { currentShopTab = tab; document.getElementById('tab-skin').classList.toggle('active', tab === 'skin'); document.getElementById('tab-bg').classList.toggle('active', tab === 'bg'); renderShopItems(); }
+        function renderShopItems() {
+            const container = document.getElementById('shop-items-container'); container.innerHTML = ''; const items = currentShopTab === 'skin' ? shopSkins : shopBgs;
+            items.forEach(item => {
+                const isOwned = (currentShopTab === 'skin' ? player.ownedSkins : player.ownedBgs).includes(item.id); const isActive = (currentShopTab === 'skin' ? player.activeSkin : player.activeBg) === item.id;
+                let actionBtn = isActive ? `<button class="btn-shop-action btn-active-skin">TERPASANG</button>` : (isOwned ? `<button class="btn-shop-action btn-equip" onclick="equipItem('${currentShopTab}', '${item.id}')">GUNAKAN</button>` : `<button class="btn-shop-action btn-buy" onclick="buyItem('${currentShopTab}', '${item.id}', ${item.price})">BELI</button>`);
+                container.innerHTML += `<div class="shop-item"><div style="display:flex; flex-direction:column; gap:4px;"><span class="shop-item-title">${item.name}</span><span class="shop-item-desc">${item.desc}</span>${!isOwned ? `<span class="shop-item-price">🪙 ${item.price} Pts</span>` : '<span class="shop-item-price" style="color:var(--success);">Milik Anda</span>'}</div><div>${actionBtn}</div></div>`;
+            });
+        }
+
+        function buyItem(type, id, price) { if (player.points < price) return alert("Poin Anda tidak mencukupi!"); player.points -= price; if (type === 'skin') player.ownedSkins.push(id); else player.ownedBgs.push(id); db.ref('players/' + player.username).update({ points: player.points, ownedSkins: player.ownedSkins, ownedBgs: player.ownedBgs }); document.getElementById('shop-wallet-display').innerText = player.points.toLocaleString('id-ID'); syncUI(); renderShopItems(); }
+        function equipItem(type, id) { if (type === 'skin') { player.activeSkin = id; db.ref('players/' + player.username).update({ activeSkin: id }); } else { player.activeBg = id; db.ref('players/' + player.username).update({ activeBg: id }); } applyEquippedSkins(); renderShopItems(); }
+        function applyEquippedSkins() {
+            if (!player) return; const s = shopSkins.find(s => s.id === player.activeSkin) || shopSkins[0];
+            document.documentElement.style.setProperty('--tile-x-color', s.xColor); document.documentElement.style.setProperty('--tile-x-shadow', s.xShadow); document.documentElement.style.setProperty('--tile-o-color', s.oColor); document.documentElement.style.setProperty('--tile-o-shadow', s.oShadow);
+            const b = shopBgs.find(b => b.id === player.activeBg) || shopBgs[0]; document.body.style.background = b.css;
+        }
+
+        function startSoloMode() { 
+            vsAI = true; side = 'X'; aiBoard = Array(9).fill(""); matchEnded = false; 
+            db.ref('players/' + player.username).update({ status: 'playing' }); nav('scr-game'); document.getElementById('social-tools').style.display = 'none'; 
+            const currentBgObj = shopBgs.find(b => b.id === player.activeBg) || shopBgs[0];
+            document.getElementById('bg-owner-info').innerText = `${currentBgObj.name}`;
+            updateTilesUI(Array(9).fill(""), {}, 'skin_default', 'skin_default'); renderBoard(aiBoard, 'X'); 
+        }
+        
+        function createRoom() { vsAI = false; roomCode = Math.floor(10000 + Math.random() * 90000).toString(); side = 'X'; matchEnded = false; db.ref('rooms/' + roomCode).set({ board: Array(9).fill(""), turn: 'X', status: 'wait', p1: player.username, p1Skin: player.activeSkin, p1Bg: player.activeBg, p1Name: player.name, history: [] }); document.getElementById('room-id-val').innerText = roomCode; nav('scr-waiting'); renderLobbyFriends(); listenRoom(); }
+        function processJoin() { const id = document.getElementById('join-code').value; db.ref('rooms/' + id).once('value', snap => { if(snap.exists() && snap.val().status === 'wait') { roomCode = id; side = 'O'; vsAI = false; matchEnded = false; db.ref('rooms/' + id).update({ status: 'play', p2: player.username, p2Skin: player.activeSkin, p2Bg: player.activeBg, p2Name: player.name }); db.ref('players/' + player.username).update({ status: 'playing' }); listenRoom(); } else alert("Room Penuh atau Tidak Ditemukan!"); }); }
+        
+        function listenRoom() { 
+            db.ref('rooms/' + roomCode).on('value', snap => { 
+                const d = snap.val(); if(!d) return; 
+                if(d.status === 'quit') { alert("Lawan Meninggalkan Pertandingan"); resetGameSession(); return; } 
+                if(d.status === 'play' || d.status === 'done') { 
+                    nav('scr-game'); document.getElementById('social-tools').style.display = 'flex'; 
+                    const bg1 = shopBgs.find(b => b.id === d.p1Bg) || shopBgs[0]; const bg2 = shopBgs.find(b => b.id === d.p2Bg) || shopBgs[0]; let chosenBg = bg1; let ownerName = d.p1Name || d.p1; if (bg2.price > bg1.price) { chosenBg = bg2; ownerName = d.p2Name || d.p2; }
+                    document.body.style.background = chosenBg.css; document.getElementById('bg-owner-info').innerText = `${chosenBg.name} by ${ownerName}`;
+                    updateTilesUI(d.board, d.history || {}, d.p1Skin, d.p2Skin); renderChats(d.chats); 
+                    if(d.status === 'play') { closeModal('overlay-result'); matchEnded = false; isTurn = (d.turn === side); document.getElementById('game-info').innerText = isTurn ? "GILIRAN ANDA" : "MENUNGGU LAWAN"; } 
+                    const win = checkWin(d.board); if(win && !matchEnded) finish(win); 
+                } 
+                if(d.rematch && d.rematch !== side) document.getElementById('rematch-status').innerText = "Lawan mengajak Rematch!"; 
+            }); 
+        }
+        
+        function updateTilesUI(b, tileOwners, p1SkinId, p2SkinId) { 
+            const tiles = document.querySelectorAll('.tile'); const s1 = shopSkins.find(s => s.id === p1SkinId) || shopSkins[0]; const s2 = shopSkins.find(s => s.id === p2SkinId) || shopSkins[0];
+            b.forEach((v, i) => { 
+                tiles[i].innerText = v; tiles[i].style.color = ''; tiles[i].style.textShadow = '';
+                if(v !== "") { const owner = tileOwners[i]; if(owner === 'p1') { tiles[i].style.color = (v === 'X') ? s1.xColor : s1.oColor; tiles[i].style.textShadow = `0 0 25px ${(v === 'X') ? s1.xShadow : s1.oShadow}`; } else if(owner === 'p2') { tiles[i].style.color = (v === 'X') ? s2.xColor : s2.oColor; tiles[i].style.textShadow = `0 0 25px ${(v === 'X') ? s2.xShadow : s2.oShadow}`; } else { const fallbackSkin = shopSkins.find(s => s.id === player.activeSkin) || shopSkins[0]; tiles[i].style.color = (v === 'X') ? fallbackSkin.xColor : fallbackSkin.oColor; tiles[i].style.textShadow = `0 0 25px ${(v === 'X') ? fallbackSkin.xShadow : fallbackSkin.oShadow}`; } }
+            }); 
+        }
+        
+        function renderBoard(b, t) { updateTilesUI(b, {}, player.activeSkin, player.activeSkin); const win = checkWin(b); if(win && !matchEnded) { finish(win); return; } if(vsAI && t === 'O' && !win) { document.getElementById('game-info').innerText = "AI BERPIKIR..."; aiPlay(); isTurn = false; } else { isTurn = (t === side); document.getElementById('game-info').innerText = isTurn ? "GILIRAN ANDA" : "MENUNGGU..."; } }
+        
+        function makeMove(i) { 
+            if(!isTurn || matchEnded) return; 
+            if(vsAI) { if(aiBoard[i]==="") { aiBoard[i]='X'; if(checkWin(aiBoard)) { renderBoard(aiBoard, 'O'); return; } renderBoard(aiBoard, 'O'); } } else { db.ref('rooms/' + roomCode).once('value', snap => { let roomData = snap.val(); let b = roomData.board; let historyLog = roomData.history || {}; if(b[i]==="") { b[i]=side; const identity = (side === 'X') ? 'p1' : 'p2'; historyLog[i] = identity; const winNow = checkWin(b); db.ref('rooms/' + roomCode).update({ board: b, turn: side==='X'?'O':'X', history: historyLog }); if(winNow) finish(winNow); } }); } 
+        }
+
+        const scores = { 'O': 10, 'X': -10, 'Draw': 0 };
+        function minimax(board, depth, isMaximizing) { let result = checkWin(board); if (result !== null) return scores[result]; if (isMaximizing) { let bestScore = -Infinity; for (let i = 0; i < 9; i++) { if (board[i] === "") { board[i] = 'O'; let score = minimax(board, depth + 1, false); board[i] = ""; bestScore = Math.max(score, bestScore); } } return bestScore; } else { let bestScore = Infinity; for (let i = 0; i < 9; i++) { if (board[i] === "") { board[i] = 'X'; let score = minimax(board, depth + 1, true); board[i] = ""; bestScore = Math.min(score, bestScore); } } return bestScore; } }
+        function aiPlay() { setTimeout(() => { let bestScore = -Infinity; let move; if (Math.random() * 100 < aiDifficulty) { for (let i = 0; i < 9; i++) { if (aiBoard[i] === "") { aiBoard[i] = 'O'; let score = minimax(aiBoard, 0, false); aiBoard[i] = ""; if (score > bestScore) { bestScore = score; move = i; } } } } else { let moves = []; for (let i = 0; i < 9; i++) if (aiBoard[i] === "") moves.push(i); move = moves[Math.floor(Math.random() * moves.length)]; } if (move !== undefined) { aiBoard[move] = 'O'; renderBoard(aiBoard, 'X'); } }, 600); }
+        
+        function finish(w) { if(matchEnded) return; matchEnded = true; openModal('overlay-result'); let xp = w === "Draw" ? 25 : (w === side ? 60 : 15); let pts = w === "Draw" ? 40 : (w === side ? 100 : 20); document.getElementById('win-status').innerText = w === "Draw" ? "SERI!" : (w === side ? "KAMU MENANG!" : "KAMU KALAH!"); document.getElementById('reward-exp').innerText = `+${xp} XP`; document.getElementById('reward-points').innerText = `+🪙 ${pts} Points`; updateGameRewards(xp, pts); if(!vsAI) db.ref('rooms/' + roomCode).update({ status: 'done' }); }
+
+        function requestRematch() { db.ref('rooms/' + roomCode).once('value', snap => { let d = snap.val(); if(d.rematch && d.rematch !== side) { db.ref('rooms/' + roomCode).update({ board: Array(9).fill(""), turn: 'X', status: 'play', rematch: null, history: {} }); } else { db.ref('rooms/' + roomCode).update({ rematch: side }); document.getElementById('rematch-status').innerText = "Menunggu persetujuan..."; } }); }
+        function exitRoomAction() { if(!vsAI) db.ref('rooms/' + roomCode).update({ status: 'quit' }); resetGameSession(); }
+        function resetGameSession() { if(!vsAI) db.ref('rooms/' + roomCode).off(); closeModal('overlay-result'); db.ref('players/' + player.username).update({ status: 'lobby' }); nav('scr-home'); matchEnded = false; }
+        
+        function updateGameRewards(xpAmt, ptsAmt) { if(player.username === 'fathurrizamreal') { player.points = 9000000; } else { player.points += ptsAmt; } player.exp += xpAmt; while(player.exp >= 100) { player.lv++; player.exp -= 100; } db.ref('players/' + player.username).update({ lv: player.lv, exp: player.exp, points: player.points, status: 'lobby' }); syncUI(); }
+        function checkWin(b) { const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; for(let l of lines) if(b[l[0]] && b[l[0]]==b[l[1]] && b[l[0]]==b[l[2]]) return b[l[0]]; return b.includes("") ? null : "Draw"; }
+        function sendChat() { const m = document.getElementById('chat-in').value; if(!m) return; db.ref('rooms/' + roomCode + '/chats').push({ n: player.name, t: m }); document.getElementById('chat-in').value = ''; }
+        function sticker(s) { db.ref('rooms/' + roomCode + '/chats').push({ n: player.name, t: s }); }
+        function renderChats(c) { const l = document.getElementById('chat-content'); l.innerHTML = ''; if(c) Object.values(c).forEach(m => { l.innerHTML += `<div style="margin-bottom: 6px;"><b>${m.n}:</b> <span style="opacity:0.8;">${m.t}</span></div>`; }); l.scrollTop = l.scrollHeight; }
+        function copyInviteLink() { navigator.clipboard.writeText(roomCode); event.target.innerText = "COPIED!"; setTimeout(() => event.target.innerText = "COPY KODE", 2000); }
+    </script>
+</body>
+</html>
